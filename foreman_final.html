@@ -310,14 +310,13 @@ function approve(id){
 
   // ส่ง Google Sheets (เปิดเมื่อมี URL)
   const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxFpwj3ZzsQK6CbbyiS-kyuiFPQd_3dNge_VE_7qgjxs5JsbaUN6eGjYkEXS7UfC6Mk/exec";
-  // ส่งไป Sheets
-  const _form = document.createElement("form");
-  _form.method = "POST"; _form.action = SHEETS_URL; _form.target = "h_iframe"; _form.style.display="none";
-  const _inp = document.createElement("input"); _inp.type="hidden"; _inp.name="payload"; _inp.value=JSON.stringify(all[idx]);
-  _form.appendChild(_inp);
-  const _ifr = document.createElement("iframe"); _ifr.name="h_iframe"; _ifr.style.display="none";
-  document.body.appendChild(_ifr); document.body.appendChild(_form); _form.submit();
-  setTimeout(()=>{document.body.removeChild(_form);document.body.removeChild(_ifr);},3000);
+  // ส่งไป Sheets ผ่าน Image trick
+  try{
+    const encoded = encodeURIComponent(JSON.stringify(all[idx]));
+    const img = new Image();
+    img.src = SHEETS_URL + "?payload=" + encoded;
+    console.log("Foreman: ส่งข้อมูลแล้ว");
+  }catch(e){ console.log("Foreman send error:",e); }
 
   updateBadge();
   renderApprove();
