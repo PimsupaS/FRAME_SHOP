@@ -86,9 +86,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div id="loginScreen" class="login-wrap">
   <div class="login-box">
     <div class="login-logo">ISUZU</div>
-    <div class="login-sub">Foreman</div>
+    <div class="login-sub">Foreman Portal — FRG</div>
     <label class="login-label">รหัสพนักงาน Foreman</label>
-    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="XXXXX" inputmode="numeric"
+    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="12345" inputmode="numeric"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
     <div class="login-err" id="loginErr"></div>
@@ -99,7 +99,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div id="mainScreen" style="display:none;">
   <div class="header">
     <div class="header-top">
-      <div><div class="logo">ISUZU <span>Foreman</span></div></div>
+      <div><div class="logo">ISUZU <span>FRG · Foreman Portal</span></div></div>
       <div class="user-pill" onclick="logout()" id="userPill">FM001 ▾</div>
     </div>
     <div class="header-label">หน้าอนุมัติ Foreman</div>
@@ -274,13 +274,28 @@ async function syncFromSheets(){
   return false;
 }
 
+function getToday(){
+  return new Date().toISOString().split("T")[0];
+}
+
 function getMyPending(){
   const all = getSubs();
-  return all.filter(s => s.status==="pending" && s.group===currentFM.group && s.shift===currentFM.shift);
+  const today = getToday();
+  return all.filter(s =>
+    s.status==="pending" &&
+    s.group===currentFM.group &&
+    s.shift===currentFM.shift &&
+    String(s.date||"").split("T")[0]===today
+  );
 }
 function getMyDone(){
   const all = getSubs();
-  return all.filter(s => s.status==="approved" && s.foreman_code===currentFM.code);
+  const today = getToday();
+  return all.filter(s =>
+    s.status==="approved" &&
+    s.foreman_code===currentFM.code &&
+    String(s.date||"").split("T")[0]===today
+  );
 }
 
 function updateBadge(){
