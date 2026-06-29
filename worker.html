@@ -495,6 +495,7 @@ function renderChecks(){
     const s=checkState[c.id];
     const div=document.createElement("div");
     div.className="check-item"+(s.result==="pass"?" pass":s.result==="fail"?" fail":"");
+    div.setAttribute("data-id", c.id);
 
     const numericRow = c.numeric ? `
       <div class="comment-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;margin-bottom:0;">
@@ -505,7 +506,7 @@ function renderChecks(){
       </div>` : "";
 
     const toggleOrStatus = c.numeric
-      ? `<div style="flex-shrink:0;margin-top:2px;">
+      ? `<div class="numeric-status" style="flex-shrink:0;margin-top:2px;">
            ${s.result==="pass"?'<span style="font-size:11px;font-weight:700;color:var(--pass);background:var(--pass-bg);border-radius:6px;padding:4px 10px;">✓ ผ่าน</span>'
              :s.result==="fail"?'<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--fail-bg);border-radius:6px;padding:4px 10px;">✗ ไม่ผ่าน</span>'
              :'<span style="font-size:11px;color:var(--muted);">รอกรอกค่า</span>'}
@@ -537,16 +538,58 @@ function setC(id,v){checkState[id].comment=v;}
 function setV(id,v){
   checkState[id].value=v;
   const c = currentChecks.find(x=>x.id===id);
-  if(c && c.numeric && v!==""){
-    const num = parseFloat(v);
-    if(!isNaN(num)){
-      checkState[id].result = (num>=c.min && num<=c.max) ? "pass" : "fail";
-      if(checkState[id].result!=="fail") checkState[id].comment="";
-      renderChecks();
-      return;
+  let needsCommentBox = false;
+
+  if(c && c.numeric){
+    if(v===""){
+      checkState[id].result = null;
+    } else {
+      const num = parseFloat(v);
+      if(!isNaN(num)){
+        const prevResult = checkState[id].result;
+        checkState[id].result = (num>=c.min && num<=c.max) ? "pass" : "fail";
+        if(checkState[id].result!=="fail") checkState[id].comment="";
+        needsCommentBox = (checkState[id].result !== prevResult); // ต้อง re-render เฉพาะถ้าสถานะเปลี่ยนจริง (fail<->pass) เพื่อโชว์/ซ่อนช่อง comment
+      }
     }
   }
+
+  if(needsCommentBox){
+    // re-render แค่ตอนจำเป็น (สถานะเปลี่ยนจาก pass<->fail) แต่คง focus ไว้ที่ input เดิมหลัง render
+    const activeId = document.activeElement ? document.activeElement.id : null;
+    renderChecks();
+    // คืน focus กลับไปที่ input ตัวเลขเดิม แล้วเลื่อน cursor ไปท้ายข้อความ
+    setTimeout(()=>{
+      const inputs = document.querySelectorAll(`.check-item input[type="number"]`);
+      // หา input ที่ตรงกับ id นี้โดยอ้างจาก oninput attribute
+      const target = Array.from(inputs).find(inp => inp.getAttribute("oninput") === `setV(${id},this.value)`);
+      if(target){ target.focus(); target.setSelectionRange(target.value.length, target.value.length); }
+    },0);
+  } else {
+    // อัปเดตแค่กล่อง status (ผ่าน/ไม่ผ่าน/รอกรอกค่า) และสีกรอบ โดยไม่ re-render ทั้งลิสต์
+    updateNumericStatusUI(id);
+  }
   updateProgress();
+}
+
+function updateNumericStatusUI(id){
+  const item = document.querySelector(`.check-item[data-id="${id}"]`);
+  if(!item) return;
+  const s = checkState[id];
+  item.classList.remove("pass","fail");
+  if(s.result==="pass") item.classList.add("pass");
+  if(s.result==="fail") item.classList.add("fail");
+
+  const statusBox = item.querySelector(".numeric-status");
+  if(statusBox){
+    if(s.result==="pass"){
+      statusBox.innerHTML = '<span style="font-size:11px;font-weight:700;color:var(--pass);background:var(--pass-bg);border-radius:6px;padding:4px 10px;">✓ ผ่าน</span>';
+    } else if(s.result==="fail"){
+      statusBox.innerHTML = '<span style="font-size:11px;font-weight:700;color:var(--red);background:var(--fail-bg);border-radius:6px;padding:4px 10px;">✗ ไม่ผ่าน</span>';
+    } else {
+      statusBox.innerHTML = '<span style="font-size:11px;color:var(--muted);">รอกรอกค่า</span>';
+    }
+  }
 }
 
 function updateProgress(){
