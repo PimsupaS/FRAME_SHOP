@@ -326,11 +326,22 @@ const CO2_CHECKS = [
   {id:10,name:"อัตราการไหลแก๊ส CO2",             method:"สายตา", standard:"26-30 Lite/minute", numeric:true, unit:"L/min", min:26, max:30},
 ];
 
+// รายการตรวจเฉพาะของ JIG
+const JIG_CHECKS = [
+  {id:1, name:"พื้นที่รอบๆ บริเวณ JIG",               method:"สายตา",                standard:"ไม่มีสิ่งของที่ไม่จำเป็นวางอยู่"},
+  {id:2, name:"สภาพทั่วไปของ CLAMP",                   method:"สายตา, สัมผัส",        standard:"ไม่หลวมคลอน"},
+  {id:3, name:"ไกด์ประคองชิ้นส่วน",                   method:"สายตา, สัมผัส",        standard:"ไม่โยก, ไม่หลวมคลอน"},
+  {id:4, name:"PIN, DATUM",                             method:"สายตา, สัมผัส",        standard:"ไม่มี SPATTER ติด, ไม่หลวมหรือสึกหรอ"},
+  {id:5, name:"PROXIMITY, PHOTO SENSOR, LIMIT SWITCH, POKAYOKE", method:"สายตา, สัมผัสเหล็กเช็ค Pokayoke", standard:"มีไฟติด, ไม่หลวมคลอน"},
+  {id:6, name:"สภาพสายลม, กระบอกลม",                  method:"สายตา, ฟังเสียง",      standard:"ไม่แตก, ไม่มีเสียงลมรั่ว"},
+];
+
 // แมประหว่างประเภทหลัก -> รายการตรวจที่ใช้
 const CHECKS_BY_TYPE = {
   CO2: CO2_CHECKS,
+  JIG: JIG_CHECKS,
 };
-  
+
 // ============================================================
 // STATE
 // ============================================================
