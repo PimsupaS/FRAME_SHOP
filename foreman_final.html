@@ -32,6 +32,16 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .tab:first-child{border-radius:12px 0 0 0;}.tab:last-child{border-radius:0 12px 0 0;}
 .tab.active{color:var(--red);border-bottom-color:var(--red);}
 .badge{display:inline-block;background:var(--red);color:#fff;border-radius:99px;font-size:10px;padding:1px 6px;margin-left:4px;vertical-align:middle;}
+.badge-warn{background:#D97706;}
+.hold-btn{background:#D97706;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.hold-btn:hover{background:#B45309;}
+.hold-card{background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+.hold-stage{font-size:15px;font-weight:700;margin-bottom:4px;}
+.hold-meta{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.hold-fails{font-size:13px;color:var(--red);font-weight:600;margin-bottom:10px;}
+.hold-status{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px;display:inline-block;}
+.hold-status-wait{background:#FEF3C7;color:#92400E;}
+.hold-status-fixed{background:var(--pass-bg);color:var(--pass);}
 .section{margin:14px 14px 0;}
 .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;}
 .sub-card{background:var(--card);border-radius:14px;border:1.5px solid var(--border);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;}
@@ -150,6 +160,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
         ✅ อนุมัติ <span class="badge" id="pendingBadge" style="display:none">0</span>
       </div>
       <div class="tab" id="tab-stations" onclick="switchTab('stations')">📊 Station ของฉัน</div>
+      <div class="tab" id="tab-hold" onclick="switchTab('hold')">⏸ รอแก้ไข <span class="badge badge-warn" id="holdBadge" style="display:none">0</span></div>
       <div class="tab" id="tab-proxy" onclick="openProxyModal()" style="color:var(--warn,#D97706);">🔄 แทน</div>
     </div>
   </div>
@@ -165,6 +176,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <div class="section">
       <div class="section-title">สถานะ Station ที่ดูแล (วันนี้)</div>
       <div id="stationGrid"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-hold">
+    <div class="section">
+      <div class="section-title">รายการรอแก้ไข (ยังไม่ผ่าน)</div>
+      <div id="holdList"></div>
     </div>
   </div>
 </div>
@@ -342,6 +360,7 @@ function switchTab(t){
   document.getElementById("tab-"+t).classList.add("active");
   if(t==="stations") syncFromSheets().then(()=>renderStations());
   if(t==="approve") renderApprove();
+  if(t==="hold") syncFromSheets().then(()=>renderHold());
 }
 
 function getSubs(){
@@ -443,7 +462,8 @@ function renderApprove(){
 function _renderApprove(){
   if(!currentFM) return;
   const list = document.getElementById("approveList");
-  const pending = getMyPending();
+  // ไม่แสดงรายการที่ส่ง "รอแก้ไข" แล้วในหน้าอนุมัติ
+  const pending = getMyPending().filter(s=>s.status!=="hold");
   const done = getMyDone();
   list.innerHTML="";
   if(!pending.length && !done.length){
@@ -492,7 +512,12 @@ function buildApproveCard(s, isDone){
       ${proxyMode?`<div style="font-size:11px;color:#92400E;background:#FEF3C7;border-radius:6px;padding:5px 10px;margin-bottom:6px;">⚠ กำลังอนุมัติแทน Group ${currentFM.group}</div>`:""}
       <div class="approve-row">
         <input type="text" id="fn_${s.id}" value="${currentFM.name}${proxyMode?" [แทน]":""}" placeholder="ชื่อ Foreman">
-        <button class="approve-btn" id="ab_${s.id}" onclick="approve('${s.id}')">✓ อนุมัติ</button>
+        ${fails.length>0?`
+          <button class="hold-btn" id="hb_${s.id}" onclick="holdForFix('${s.id}')">⏸ รอแก้ไข</button>
+          <button class="approve-btn" id="ab_${s.id}" onclick="approve('${s.id}')" style="background:#6B7280;">อนุมัติทับ</button>
+        `:`
+          <button class="approve-btn" id="ab_${s.id}" onclick="approve('${s.id}')">✓ อนุมัติ</button>
+        `}
       </div>
     `:`<div class="approved-banner">✓ อนุมัติโดย ${s.foreman}${s.proxy_by?" (แทนโดย "+s.proxy_by+")":""} · ${new Date(s.timestamp_foreman).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"})}</div>`}
   `;
@@ -529,6 +554,7 @@ function approve(id){
 
   updateBadge();
   updateApproveCount();
+  updateHoldBadge();
   _renderApprove();
   showToast("✓ อนุมัติและส่ง Office สำเร็จ!","ok");
 }
@@ -661,7 +687,103 @@ function exitProxy(){
   showToast("กลับสู่ Group ของตัวเองแล้ว","ok");
 }
 
-setInterval(()=>{if(currentFM){updateBadge();updateApproveCount();}},30000);
+
+// ============================================================
+// HOLD FOR FIX — รอแก้ไข
+// ============================================================
+function holdForFix(id){
+  const all = getSubs();
+  const idx = all.findIndex(s=>s.id===id);
+  if(idx===-1) return;
+
+  all[idx].status = "hold";
+  all[idx].held_by = currentFM.name;
+  all[idx].held_code = currentFM.code;
+  all[idx].timestamp_hold = new Date().toISOString();
+  saveSubs(all);
+
+  // ส่ง Sheets
+  try{
+    const encoded = encodeURIComponent(JSON.stringify(all[idx]));
+    new Image().src = SHEETS_URL + "?payload=" + encoded;
+  }catch(e){}
+
+  updateBadge();
+  updateHoldBadge();
+  _renderApprove();
+  showToast("⏸ ย้ายไปรอแก้ไขแล้ว","ok");
+}
+
+function getMyHold(){
+  const all = getSubs();
+  const today = getToday();
+  return all.filter(s=>
+    s.status==="hold" &&
+    s.group===currentFM.group &&
+    s.shift===currentFM.shift &&
+    String(s.date||"").split("T")[0]===today
+  );
+}
+
+function updateHoldBadge(){
+  const n = getMyHold().length;
+  const b = document.getElementById("holdBadge");
+  if(b){ b.style.display=n?"inline":"none"; b.textContent=n; }
+}
+
+function renderHold(){
+  if(!currentFM) return;
+  const list = document.getElementById("holdList");
+  const hold = getMyHold();
+  list.innerHTML="";
+
+  if(!hold.length){
+    list.innerHTML=`<div class="empty-state"><div class="icon">✅</div><p>ไม่มีรายการรอแก้ไข</p></div>`;
+    return;
+  }
+
+  // แยกกลุ่ม: รอ Worker แก้ไข vs Worker ส่งใหม่มาแล้ว
+  const all = getSubs();
+  hold.forEach(s=>{
+    const fails = (s.checks||[]).filter(c=>c.result==="fail");
+    const failNames = fails.map(c=>{
+      let txt = c.name;
+      if(c.value) txt += " ["+c.value+"]";
+      return txt;
+    }).join(", ");
+
+    // ตรวจว่า Worker ส่งรายการใหม่มาแทนแล้วหรือยัง (pending ที่ stage+group+shift เดิมในวันนี้)
+    const today = getToday();
+    const newSubmit = all.find(x=>
+      x.status==="pending" &&
+      x.stage===s.stage && x.group===s.group &&
+      x.shift===s.shift &&
+      String(x.date||"").split("T")[0]===today &&
+      x.id!==s.id
+    );
+
+    const card = document.createElement("div");
+    card.className="hold-card";
+    card.innerHTML=`
+      <div class="hold-stage">${s.type_label||s.type||""} — ${s.stage}</div>
+      <div class="hold-meta">Worker: ${s.worker} · SHIFT ${s.shift}</div>
+      <div class="hold-fails">❌ ไม่ผ่าน: ${failNames}</div>
+      ${newSubmit?`
+        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--pass);">
+          ✅ Worker ส่งแก้ไขมาแล้ว — รอการอนุมัติ
+        </div>
+        <button class="approve-btn" style="width:100%;" onclick="switchTab('approve')">ไปหน้าอนุมัติ →</button>
+      `:`
+        <div style="background:#FEF3C7;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#92400E;">
+          ⏳ รอ Worker แก้ไขและส่งใหม่อีกครั้ง
+        </div>
+      `}
+    `;
+    list.appendChild(card);
+  });
+}
+
+setInterval(()=>{if(currentFM){updateBadge();updateApproveCount();updateHoldBadge();}},30000);
 </script>
 </body>
 </html>
