@@ -100,9 +100,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div id="loginScreen" class="login-wrap">
   <div class="login-box">
     <div class="login-logo">ISUZU</div>
-    <div class="login-sub">Foreman Portal — FRG</div>
+    <div class="login-sub">Foreman</div>
     <label class="login-label">รหัสพนักงาน Foreman</label>
-    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="12345" inputmode="numeric"
+    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="xxxxx" inputmode="numeric"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
     <div class="login-err" id="loginErr"></div>
@@ -427,7 +427,9 @@ function getMyPending(){
 
 // เช็คว่า id นี้ถูก hold ไว้ใน localStorage หรือเปล่า
 function isHeld(id){
-  const held = JSON.parse(localStorage.getItem("isuzu_held")||"[]");
+  const today = getToday();
+  const key = "isuzu_held_" + today;
+  const held = JSON.parse(localStorage.getItem(key)||"[]");
   return held.includes(id);
 }
 function getMyDone(){
@@ -558,18 +560,18 @@ function approve(id){
   const hasFail = (approvedEntry.checks||[]).some(c=>c.result==="fail");
   if(!hasFail){
     // ลบ id ที่ hold ไว้ทุกตัวที่เป็น stage+group+shift เดียวกัน
-    const held = JSON.parse(localStorage.getItem("isuzu_held")||"[]");
+    const todayKey = "isuzu_held_" + getToday();
+    const held = JSON.parse(localStorage.getItem(todayKey)||"[]");
     const allSubs = getSubs();
     const newHeld = held.filter(hid=>{
       const hEntry = allSubs.find(s=>s.id===hid);
-      if(!hEntry) return false; // ไม่มีอยู่แล้ว ลบออก
-      // ถ้า stage+group+shift ตรงกับที่เพิ่งอนุมัติ → ลบออก
+      if(!hEntry) return false;
       const sameStage = hEntry.stage===approvedEntry.stage &&
                         hEntry.group===approvedEntry.group &&
                         hEntry.shift===approvedEntry.shift;
       return !sameStage;
     });
-    localStorage.setItem("isuzu_held", JSON.stringify(newHeld));
+    localStorage.setItem(todayKey, JSON.stringify(newHeld));
   }
 
   try{
@@ -718,12 +720,13 @@ function exitProxy(){
 // HOLD FOR FIX — รอแก้ไข
 // ============================================================
 function holdForFix(id){
-  // บันทึก id ที่ hold ไว้ใน localStorage แยกต่างหาก
-  // วิธีนี้ป้องกัน syncFromSheets ทับสถานะ เพราะ held list จะอยู่รอดแม้ sync
-  const held = JSON.parse(localStorage.getItem("isuzu_held")||"[]");
+  // บันทึก id ที่ hold ไว้ — ใช้ key รายวันเพื่อ auto-expire
+  const today = getToday();
+  const key = "isuzu_held_" + today;
+  const held = JSON.parse(localStorage.getItem(key)||"[]");
   if(!held.includes(id)){
     held.push(id);
-    localStorage.setItem("isuzu_held", JSON.stringify(held));
+    localStorage.setItem(key, JSON.stringify(held));
   }
 
   updateBadge();
@@ -735,7 +738,8 @@ function holdForFix(id){
 function getMyHold(){
   const all = getSubs();
   const today = getToday();
-  const held = JSON.parse(localStorage.getItem("isuzu_held")||"[]");
+  const key = "isuzu_held_" + today;
+  const held = JSON.parse(localStorage.getItem(key)||"[]");
   return all.filter(s=>
     held.includes(s.id) &&
     s.group===currentFM.group &&
