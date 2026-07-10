@@ -100,9 +100,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div id="loginScreen" class="login-wrap">
   <div class="login-box">
     <div class="login-logo">ISUZU</div>
-    <div class="login-sub">Foreman</div>
+    <div class="login-sub">Foreman Portal — FRG</div>
     <label class="login-label">รหัสพนักงาน Foreman</label>
-    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="XXXXX" inputmode="numeric"
+    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="12345" inputmode="numeric"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
     <div class="login-err" id="loginErr"></div>
@@ -552,6 +552,26 @@ function approve(id){
   }
   saveSubs(all);
 
+  // ถ้ารายการที่อนุมัตินี้ผ่านทุกข้อ → ลบ "held" ที่เกี่ยวข้องกับ stage เดียวกันออกจาก isuzu_held
+  // เพราะ Worker ส่งมาใหม่แล้วและผ่านแล้ว ไม่ต้องรอแก้ไขอีก
+  const approvedEntry = all[idx];
+  const hasFail = (approvedEntry.checks||[]).some(c=>c.result==="fail");
+  if(!hasFail){
+    // ลบ id ที่ hold ไว้ทุกตัวที่เป็น stage+group+shift เดียวกัน
+    const held = JSON.parse(localStorage.getItem("isuzu_held")||"[]");
+    const allSubs = getSubs();
+    const newHeld = held.filter(hid=>{
+      const hEntry = allSubs.find(s=>s.id===hid);
+      if(!hEntry) return false; // ไม่มีอยู่แล้ว ลบออก
+      // ถ้า stage+group+shift ตรงกับที่เพิ่งอนุมัติ → ลบออก
+      const sameStage = hEntry.stage===approvedEntry.stage &&
+                        hEntry.group===approvedEntry.group &&
+                        hEntry.shift===approvedEntry.shift;
+      return !sameStage;
+    });
+    localStorage.setItem("isuzu_held", JSON.stringify(newHeld));
+  }
+
   try{
     const encoded = encodeURIComponent(JSON.stringify(all[idx]));
     const img = new Image();
@@ -734,6 +754,8 @@ function renderHold(){
   if(!currentFM) return;
   const list = document.getElementById("holdList");
   const hold = getMyHold();
+  const all = getSubs();
+  const today = getToday();
   list.innerHTML="";
 
   if(!hold.length){
@@ -741,8 +763,6 @@ function renderHold(){
     return;
   }
 
-  // แยกกลุ่ม: รอ Worker แก้ไข vs Worker ส่งใหม่มาแล้ว
-  const all = getSubs();
   hold.forEach(s=>{
     const fails = (s.checks||[]).filter(c=>c.result==="fail");
     const failNames = fails.map(c=>{
@@ -751,9 +771,18 @@ function renderHold(){
       return txt;
     }).join(", ");
 
-    // ตรวจว่า Worker ส่งรายการใหม่มาแทนแล้วหรือยัง (pending ที่ stage+group+shift เดิมในวันนี้)
-    const today = getToday();
-    const newSubmit = all.find(x=>
+    // ตรวจว่า Worker ส่งรายการใหม่มาแล้วและอนุมัติผ่านแล้วหรือยัง
+    const approvedNew = all.find(x=>
+      x.status==="approved" &&
+      x.stage===s.stage && x.group===s.group &&
+      x.shift===s.shift &&
+      String(x.date||"").split("T")[0]===today &&
+      x.id!==s.id &&
+      !(x.checks||[]).some(c=>c.result==="fail")
+    );
+
+    // ตรวจว่า Worker ส่งมาใหม่แล้วแต่ยังรออนุมัติ
+    const pendingNew = all.find(x=>
       x.status==="pending" &&
       x.stage===s.stage && x.group===s.group &&
       x.shift===s.shift &&
@@ -763,20 +792,33 @@ function renderHold(){
 
     const card = document.createElement("div");
     card.className="hold-card";
+
+    let statusBlock = "";
+    if(approvedNew){
+      // อนุมัติผ่านแล้ว — แสดงแต่ซีดลง (จะถูกลบจาก held อัตโนมัติ)
+      statusBlock = `
+        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--pass);">
+          ✅ อนุมัติผ่านแล้ว — แก้ไขเรียบร้อย
+        </div>`;
+      card.style.opacity="0.5";
+    } else if(pendingNew){
+      statusBlock = `
+        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--pass);">
+          ✅ Worker ส่งแก้ไขมาแล้ว — รอการอนุมัติ
+        </div>
+        <button class="approve-btn" style="width:100%;" onclick="switchTab('approve')">ไปหน้าอนุมัติ →</button>`;
+    } else {
+      statusBlock = `
+        <div style="background:#FEF3C7;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400E;">
+          ⏳ รอ Worker แก้ไขและส่งใหม่อีกครั้ง
+        </div>`;
+    }
+
     card.innerHTML=`
       <div class="hold-stage">${s.type_label||s.type||""} — ${s.stage}</div>
       <div class="hold-meta">Worker: ${s.worker} · SHIFT ${s.shift}</div>
-      <div class="hold-fails">❌ ไม่ผ่าน: ${failNames}</div>
-      ${newSubmit?`
-        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--pass);">
-          ✅ Worker ส่งแก้ไขมาแล้ว — รอการอนุมัติ
-        </div>
-        <button class="approve-btn" style="width:100%;" onclick="switchTab('approve')">ไปหน้าอนุมัติ →</button>
-      `:`
-        <div style="background:#FEF3C7;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#92400E;">
-          ⏳ รอ Worker แก้ไขและส่งใหม่อีกครั้ง
-        </div>
-      `}
+      <div class="hold-fails" style="margin-bottom:8px;">❌ ไม่ผ่าน: ${failNames}</div>
+      ${statusBlock}
     `;
     list.appendChild(card);
   });
