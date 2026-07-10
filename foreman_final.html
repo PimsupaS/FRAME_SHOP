@@ -100,9 +100,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div id="loginScreen" class="login-wrap">
   <div class="login-box">
     <div class="login-logo">ISUZU</div>
-    <div class="login-sub">Foreman Portal — FRG</div>
+    <div class="login-sub">Foreman</div>
     <label class="login-label">รหัสพนักงาน Foreman</label>
-    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="12345" inputmode="numeric"
+    <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="xxxxx" inputmode="numeric"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
     <div class="login-err" id="loginErr"></div>
@@ -425,12 +425,24 @@ function getToday(){
 function getMyPending(){
   const all = getSubs();
   const today = getToday();
+
+  // หา stage+type ที่ approved แล้วในวันนี้ (ไม่แสดง pending ซ้ำอีก)
+  const approvedKeys = new Set(
+    all.filter(s=>
+      s.status==="approved" &&
+      s.group===currentFM.group &&
+      s.shift===currentFM.shift &&
+      String(s.date||"").split("T")[0]===today
+    ).map(s=>s.type+"|"+s.stage)
+  );
+
   return all.filter(s =>
-    (s.status==="pending") &&
+    s.status==="pending" &&
     s.group===currentFM.group &&
     s.shift===currentFM.shift &&
     String(s.date||"").split("T")[0]===today &&
-    !isHeld(s.id)  // ไม่แสดงรายการที่กด "รอแก้ไข" แล้ว
+    !isHeld(s.id) &&
+    !approvedKeys.has(s.type+"|"+s.stage)  // ไม่แสดง pending ถ้า stage+type นั้น approved แล้ว
   );
 }
 
