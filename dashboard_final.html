@@ -41,9 +41,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .refresh-btn{margin-left:auto;background:var(--card);border:1.5px solid var(--border);border-radius:8px;
   padding:4px 12px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
 /* TYPE CARDS */
-.type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 14px 0;}
+.type-grid{display:flex;gap:10px;padding:12px 14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.type-grid::-webkit-scrollbar{display:none;}
 .tc{background:var(--card);border-radius:16px;padding:18px 16px;cursor:pointer;
-  border:2px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .15s;position:relative;overflow:hidden;}
+  border:2px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:all .15s;
+  position:relative;overflow:hidden;flex:0 0 150px;min-width:150px;}
 .tc:active{transform:scale(.97);}
 .tc.tc-pass{border-color:var(--pass-border);background:var(--pass-bg);}
 .tc.tc-fail{border-color:var(--fail-border);background:var(--fail-bg);}
@@ -241,14 +243,24 @@ function getSubs(){return JSON.parse(localStorage.getItem("isuzu_submissions")||
 function parseRows(rows){
   return rows.map(row=>{
     let j=row["JSON เต็ม"]||"";
-    if(!j||j==="{}"){
+    // fallback: หา JSON จากทุก column
+    if(!j||j==="{}"||j==="null"){
       for(const k of Object.keys(row)){
         const v=String(row[k]||"");
         if(v.startsWith("{")&&v.includes('"id"')&&v.includes('"stage"')){j=v;break;}
       }
     }
     if(!j) return null;
-    try{const e=JSON.parse(j);return(e&&e.id)?e:null;}catch(e){return null;}
+    try{
+      const e=JSON.parse(j);
+      if(!e||!e.id) return null;
+      // ถ้า entry มี proxy_by แต่ status เป็น pending ใน JSON เก่า → แก้เป็น approved
+      if(e.proxy_by && e.status==="pending") e.status="approved";
+      // sync ชื่อ foreman จากคอลัมน์ตรงๆ ถ้า JSON ไม่มี
+      if(!e.foreman && row["Foreman"]) e.foreman = String(row["Foreman"]);
+      if(!e.status && row["สถานะ"]) e.status = String(row["สถานะ"]);
+      return e;
+    }catch(e){return null;}
   }).filter(Boolean);
 }
 
