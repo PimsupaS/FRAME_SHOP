@@ -763,7 +763,7 @@ function renderHold(){
     );
 
     const pendingNew = all.find(x=>
-      x.status==="approved" &&
+      x.status==="pending" &&
       x.stage===s.stage && x.group===s.group &&
       x.shift===s.shift &&
       String(x.date||"").split("T")[0]===today &&
@@ -778,9 +778,10 @@ function renderHold(){
       statusBlock = `<div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--pass);">✅ อนุมัติรอบใหม่ผ่านเรียบร้อยแล้ว</div>`;
       card.style.opacity="0.5";
     } else if(pendingNew){
+      // จุดที่ปรับปรุง: ลิงก์ทางลัด ข้ามไปแท็บอนุมัติหลักทันทีเมื่อมีข้อมูลใหม่เข้ามา
       statusBlock = `
         <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--pass);">✅ Worker ส่งใบตรวจใหม่เข้ามาแล้ว</div>
-        <button class="approve-btn" style="width:100%;" onclick="switchTab('approve')">ไปหน้าตรวจสอบข้อมูล →</button>`;
+        <button class="approve-btn" style="width:100%; font-weight:700;" onclick="switchTab('approve')">ไปหน้าตรวจสอบข้อมูล →</button>`;
     } else {
       statusBlock = `<div style="background:#FEF3C7;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400E;">⏳ รอ Worker ดำเนินการแก้ไขข้อที่ไม่ผ่านและส่งใหม่</div>`;
     }
