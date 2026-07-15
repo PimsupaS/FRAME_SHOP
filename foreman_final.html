@@ -154,6 +154,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div class="tab" id="tab-stations" onclick="switchTab('stations')">📊 Station ของฉัน</div>
       <div class="tab" id="tab-hold" onclick="switchTab('hold')">⏸ รอแก้ไข <span class="badge badge-warn" id="holdBadge" style="display:none">0</span></div>
+      <div class="tab" id="tab-proxy" onclick="openProxyModal()" style="color:#D97706; font-weight:700;">🔄 แทน</div>
     </div>
   </div>
 
@@ -279,7 +280,7 @@ const STATION_DATA = {
       "SC2-01": [], "SC2-02": [], "MC2-02": [], "MC2-04": [], "MC2-05": [], "MC2-07": [],
     }},
     CONTACT_TIP: { label:"CONTACT TIP", stages:{
-      "MC2-02": ["W1","W2","W3","W4"], "MC2-04": ["W1","W2","W3","W4"], "MC2-05": ["W1","W2","W3","W4"], "MC2-07": ["W1","W2"], "SC2-01": ["W1","W2","W3"], "SC2-02": ["W1","W2","W3"],
+      "MC2-02": ["W1","W2","W3","W4"], "MC2-04": ["W1","W2","W3","W4"], "MC2-05": ["W1","W2","W3","W4"], "MC2-07": ["W1","W2"], "SC2-01": ["W1","W2","W3"], "SC2-02": ["W1","W2","W3"]
     }},
   },
   FXC: {
