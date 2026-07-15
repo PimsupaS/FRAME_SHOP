@@ -166,7 +166,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 
-  <div class="page" id="page-stations">
+  <div class="page" id="station-list">
     <div class="section">
       <div class="section-title">สถานะ Station ที่ดูแล (วันนี้)</div>
       <div id="stationGrid"></div>
@@ -273,7 +273,7 @@ const STATION_DATA = {
       "SC2-01": ["RG2u-RJ2u"], "SC2-02": ["RG2u-RJ2u"],
       "MC2-01": [], "MC2-02": [], "MC2-04": [], "MC2-05": [], "MC2-07": [], "MC2-10": [],
     }},
-    AIR: { border: "none", label:"AIR SERVICE UNIT", stages:{
+    AIR: { label:"AIR SERVICE UNIT", stages:{
       "SC2-01": [], "SC2-02": [], "MC2-01,02": [], "MC2-04,05": [], "MC2-07": [],
       "MC2-10": ["H8", "H9", "H10", "Jig"],
     }},
@@ -305,10 +305,10 @@ let originalShift = null;
 function getAllStagesForGroup(group){
   const types = STATION_DATA[group] || {};
   const result = [];
-  Object.entries(types).forEach(([typeKey, typeData])=>{
-    Object.entries(typeData.stages).forEach(([stageName, subtypes])=>{
+  Object.entries(types).forEach(([typeKey, typeData]) => {
+    Object.entries(typeData.stages).forEach(([stageName, subtypes]) => {
       if(subtypes.length){
-        subtypes.forEach(sub=>{
+        subtypes.forEach(sub => {
           result.push({ type:typeKey, typeLabel:typeData.label, stage: stageName+"-"+sub, baseStage: stageName });
         });
       } else {
@@ -345,8 +345,11 @@ function logout(){
 function switchTab(t){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  const targetPage = document.getElementById("page-"+t);
+  
+  const targetPageId = (t === "stations") ? "station-list" : "page-" + t;
+  const targetPage = document.getElementById(targetPageId);
   if(targetPage) targetPage.classList.add("active");
+  
   const targetTab = document.getElementById("tab-"+t);
   if(targetTab) targetTab.classList.add("active");
   
@@ -398,7 +401,7 @@ async function syncFromSheets(){
         return true;
       }
     }
-  }catch(e){ console.log("Sync error:",e); }
+  }catch(e) { console.log("Sync error:",e); }
   return false;
 }
 
@@ -408,21 +411,16 @@ function getToday(){
   return thai.toISOString().split("T")[0];
 }
 
-// ----------------------------------------------------
-// แก้ไขระบบปลดล็อกคัดกรองข้อมูล: อิงตามเวลาใบงานล่าสุด เพื่อให้กดส่งมาซ้ำได้
-// ----------------------------------------------------
 function getMyPending(){
   const all = getSubs();
   const today = getToday();
 
-  // 1. คัดกรองเอาเฉพาะรายการของกลุ่มและกะตัวเองในวันนี้
   const myTodaySubs = all.filter(s =>
     s.group===currentFM.group &&
     s.shift===currentFM.shift &&
     String(s.date||"").split("T")[0]===today
   );
 
-  // 2. หาว่าใบงานล่าสุดของแต่ละด่าน (Stage + Type) มีสถานะเป็นอะไร
   const latestStatusMap = {};
   myTodaySubs.forEach(s => {
     const key = s.type + "|" + s.stage;
@@ -431,11 +429,10 @@ function getMyPending(){
     }
   });
 
-  // 3. ปล่อยเฉพาะใบงานที่มีสถานะล่าสุดเป็น pending และไม่โดนขังในแท็บรอแก้ไขขึ้นมา
   return myTodaySubs.filter(s =>
     s.status==="pending" &&
     !isHeld(s.id) &&
-    latestStatusMap[typeKey = s.type + "|" + s.stage]?.id === s.id
+    latestStatusMap[s.type + "|" + s.stage]?.id === s.id
   );
 }
 
@@ -444,6 +441,29 @@ function isHeld(id){
   const key = "isuzu_held_" + today;
   const held = JSON.parse(localStorage.getItem(key)||"[]");
   return held.includes(id);
+}
+
+// ----------------------------------------------------
+// แก้ไขลอจิกการคำนวณจำนวนด่านที่เสร็จจริง (ป้องกันการนับซ้ำ)
+// ----------------------------------------------------
+function getMyDoneCount(){
+  const all = getSubs();
+  const today = getToday();
+  
+  const myDoneSubs = all.filter(s =>
+    s.status==="approved" &&
+    s.group===currentFM.group &&
+    s.shift===currentFM.shift &&
+    String(s.date||"").split("T")[0]===today
+  );
+
+  // คัดแยกเพื่อนับเฉพาะคู่สเตชั่น (Type + Stage) ที่ไม่ซ้ำกัน
+  const uniqueDoneStages = new Set();
+  myDoneSubs.forEach(s => {
+    uniqueDoneStages.add(s.type + "|" + s.stage);
+  });
+  
+  return uniqueDoneStages.size;
 }
 
 function getMyDone(){
@@ -459,10 +479,10 @@ function getMyDone(){
 
 function updateApproveCount(){
   if(!currentFM) return;
-  const done = getMyDone().length;
+  const doneCount = getMyDoneCount(); // เรียกใช้ลอจิกคัดแยกนับสถานีแบบไม่ซ้ำ
   const stages = getAllStagesForGroup(currentFM.group).length;
   const el = document.getElementById("fmStations");
-  el.textContent = `SHIFT ${currentFM.shift} · Group ${currentFM.group}${proxyMode?" (แทน)":""} · อนุมัติแล้ว ${done}/${stages}`;
+  el.textContent = `SHIFT ${currentFM.shift} · Group ${currentFM.group}${proxyMode?" (แทน)":""} · อนุมัติแล้ว ${doneCount}/${stages}`;
 }
 
 function updateBadge(){
