@@ -15,7 +15,7 @@
 body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .header{background:var(--red);color:#fff;padding:16px 20px 18px;}
 .header-row{display:flex;justify-content:space-between;align-items:flex-start;}
-.brand{font-size:20px;font-weight:900;letter-spacing:.04em;}
+.brand(font-size:20px;font-weight:900;letter-spacing:.04em;}
 .brand-sub{font-size:11px;opacity:.7;margin-top:1px;}
 .live-wrap{text-align:right;}
 .live-pill{display:flex;align-items:center;gap:5px;justify-content:flex-end;font-size:12px;font-weight:700;}
@@ -40,7 +40,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .refresh-bar{display:flex;align-items:center;padding:8px 14px 0;font-size:12px;color:var(--muted);}
 .refresh-btn{margin-left:auto;background:var(--card);border:1.5px solid var(--border);border-radius:8px;
   padding:4px 12px;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
-/* TYPE CARDS */
 .type-grid{display:flex;gap:10px;padding:12px 14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .type-grid::-webkit-scrollbar{display:none;}
 .tc{background:var(--card);border-radius:16px;padding:18px 16px;cursor:pointer;
@@ -64,12 +63,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .fail-dot{position:absolute;top:12px;right:12px;background:var(--red);color:#fff;
   border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:700;
   display:flex;align-items:center;justify-content:center;}
-/* ALERT */
 .alert-box{margin:10px 14px 0;background:var(--fail-bg);border:1.5px solid var(--fail-border);
   border-radius:12px;padding:10px 14px;}
 .alert-title{font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px;}
 .alert-body{font-size:12px;color:var(--text);}
-/* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;
   align-items:flex-end;justify-content:center;}
 .overlay.show{display:flex;}
@@ -82,14 +79,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .drawer-sub{font-size:12px;color:var(--muted);margin-top:2px;}
 .drawer-close{float:right;background:none;border:none;font-size:24px;cursor:pointer;
   color:var(--muted);line-height:1;margin-top:-2px;}
-/* GROUP ROW inside modal */
 .group-row{margin:10px 18px 0;}
 .group-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
   color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
 .group-prog{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
 .group-prog-fill{height:100%;background:var(--pass);border-radius:99px;}
 .group-pct{font-size:11px;font-weight:700;color:var(--muted);}
-/* STAGE ITEMS */
 .stage-list{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
 .si{border-radius:12px;padding:11px 14px;border:1.5px solid var(--border);background:#FAFAFA;}
 .si.si-pass{background:var(--pass-bg);border-color:var(--pass-border);}
@@ -158,7 +153,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <script>
 const SHEETS_URL="https://script.google.com/macros/s/AKfycbxFpwj3ZzsQK6CbbyiS-kyuiFPQd_3dNge_VE_7qgjxs5JsbaUN6eGjYkEXS7UfC6Mk/exec";
 
-// ประเภทหลัก 7 ประเภท (แสดงบนหน้าหลัก)
 const TYPE_META={
   HOIST:{label:"ELECTRIC HOIST",icon:"⚙️"},
   CO2:{label:"เครื่องเชื่อม CO2",icon:"🔥"},
@@ -243,7 +237,6 @@ function getSubs(){return JSON.parse(localStorage.getItem("isuzu_submissions")||
 function parseRows(rows){
   return rows.map(row=>{
     let j=row["JSON เต็ม"]||"";
-    // fallback: หา JSON จากทุก column
     if(!j||j==="{}"||j==="null"){
       for(const k of Object.keys(row)){
         const v=String(row[k]||"");
@@ -254,13 +247,11 @@ function parseRows(rows){
     try{
       const e=JSON.parse(j);
       if(!e||!e.id) return null;
-      // ถ้า entry มี proxy_by แต่ status เป็น pending ใน JSON เก่า → แก้เป็น approved
       if(e.proxy_by && e.status==="pending") e.status="approved";
-      // sync ชื่อ foreman จากคอลัมน์ตรงๆ ถ้า JSON ไม่มี
       if(!e.foreman && row["Foreman"]) e.foreman = String(row["Foreman"]);
       if(!e.status && row["สถานะ"]) e.status = String(row["สถานะ"]);
       return e;
-    }catch(e){return null;}
+    }catch(err){return null;}
   }).filter(Boolean);
 }
 
@@ -272,7 +263,10 @@ async function syncFromSheets(){
       const entries=parseRows(data.rows);
       if(entries.length>0){allSubs=entries;localStorage.setItem("isuzu_submissions",JSON.stringify(entries));}
     }
-  }catch(e){allSubs=getSubs();}
+  }catch(e){
+    console.log("Offline or error sync dashboard, using cache");
+  }
+  allSubs=getSubs();
 }
 
 function setShift(s,btn){
@@ -282,7 +276,11 @@ function setShift(s,btn){
   renderDashboard();
 }
 
-function refresh(){syncFromSheets().then(()=>renderDashboard());resetCountdown();}
+function refresh(){
+  syncFromSheets().then(()=>renderDashboard());
+  resetCountdown();
+}
+
 function resetCountdown(){
   countdown=30;clearInterval(countdownTimer);
   countdownTimer=setInterval(()=>{
@@ -294,7 +292,6 @@ function resetCountdown(){
 
 function renderDashboard(){
   const dateVal=document.getElementById("filterDate").value;
-  const shifts=currentShift==="ALL"?["A","B"]:[currentShift];
   document.getElementById("lastUpdate").textContent=
     new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 
@@ -304,7 +301,6 @@ function renderDashboard(){
     return d===dateVal&&s.status==="approved"&&shiftOk;
   });
 
-  // รวม stats ทุก group ตาม type
   const typeStats={};
   let totalAll=0,passAll=0,failAll=0;
   const alerts=[];
@@ -313,14 +309,24 @@ function renderDashboard(){
     Object.entries(STATION_DATA[group]).forEach(([typeKey,typeData])=>{
       if(!typeStats[typeKey]) typeStats[typeKey]={total:0,pass:0,fail:0,wait:0};
       const stages=getAllStages(group,typeKey);
+      
       stages.forEach(stage=>{
-        totalAll++;typeStats[typeKey].total++;
+        totalAll++;
+        typeStats[typeKey].total++;
         const stageSubs=subs.filter(s=>s.stage===stage&&s.group===group&&s.type===typeKey);
         const anyDone=stageSubs.length>0;
         const anyFail=stageSubs.some(s=>(s.checks||[]).some(c=>c.result==="fail"));
-        if(anyFail){typeStats[typeKey].fail++;failAll++;passAll++;}
-        else if(anyDone){typeStats[typeKey].pass++;passAll++;}
-        else typeStats[typeKey].wait++;
+        
+        if(anyFail){
+          typeStats[typeKey].fail++;
+          failAll++;
+        } else if(anyDone){
+          typeStats[typeKey].pass++;
+          passAll++;
+        } else {
+          typeStats[typeKey].wait++;
+        }
+        
         if(anyFail){
           const sub=stageSubs[0];
           const failItems=(sub.checks||[]).filter(c=>c.result==="fail").map(c=>{
@@ -335,9 +341,8 @@ function renderDashboard(){
   document.getElementById("sTotal").textContent=totalAll;
   document.getElementById("sPass").textContent=passAll;
   document.getElementById("sFail").textContent=failAll;
-  document.getElementById("sWait").textContent=totalAll-passAll;
+  document.getElementById("sWait").textContent=totalAll - (passAll + failAll);
 
-  // alerts
   const alertArea=document.getElementById("alertArea");
   if(alerts.length){
     alertArea.innerHTML=alerts.slice(0,5).map(a=>`
@@ -347,24 +352,22 @@ function renderDashboard(){
       </div>`).join("")+(alerts.length>5?`<div style="text-align:center;font-size:12px;color:var(--red);padding:6px 0;font-weight:700;">และอีก ${alerts.length-5} รายการ...</div>`:"");
   } else alertArea.innerHTML="";
 
-  // type cards (หน้าหลัก)
   const grid=document.getElementById("typeGrid");
   grid.innerHTML="";
 
-  // เรียงประเภทที่มีข้อมูลในระบบ
-  const typeKeys=Object.keys(typeStats);
-  typeKeys.forEach(typeKey=>{
+  Object.keys(typeStats).forEach(typeKey=>{
     const st=typeStats[typeKey];
     const meta=TYPE_META[typeKey]||{label:typeKey,icon:"📋"};
     const done=st.pass+st.fail;
-    let cls="",badge="",badgeCls="";
-    if(st.fail>0){cls="tc-fail";badge="⚠ พบปัญหา";badgeCls="";}
-    else if(done===st.total&&st.total>0){cls="tc-pass";badge="ผ่าน";badgeCls="";}
-    else if(done>0){cls="tc-warn";badge="ผ่านบางส่วน";badgeCls="";}
-    else{badge="รอตรวจ";badgeCls="";}
+    let cls="",badge="";
+    
+    if(st.fail>0){cls="tc-fail";badge="⚠ พบปัญหา";}
+    else if(done===st.total&&st.total>0){cls="tc-pass";badge="ผ่านครบ";}
+    else if(done>0){cls="tc-warn";badge="ผ่านบางส่วน";}
+    else{badge="รอตรวจ";}
 
     const card=document.createElement("div");
-    card.className="tc "+(cls||"");
+    card.className="tc "+cls;
     card.innerHTML=`
       ${st.fail>0?`<div class="fail-dot">${st.fail}</div>`:""}
       <div class="tc-icon">${meta.icon}</div>
@@ -372,13 +375,12 @@ function renderDashboard(){
       <div class="tc-ratio">${done}/${st.total}</div>
       <div class="tc-badge">${badge}</div>
     `;
-    card.onclick=()=>openModal(typeKey,meta,subs,shifts);
+    card.onclick=()=>openModal(typeKey,meta,subs);
     grid.appendChild(card);
   });
 }
 
-// MODAL: แสดงรายละเอียดแยก Group → Stage
-function openModal(typeKey,meta,subs,shifts){
+function openModal(typeKey,meta,subs){
   document.getElementById("drawerTitle").textContent=meta.icon+" "+meta.label;
 
   let totalPass=0,totalFail=0,totalAll=0;
@@ -399,25 +401,25 @@ function openModal(typeKey,meta,subs,shifts){
       const anyFail=stageSubs.some(s=>(s.checks||[]).some(c=>c.result==="fail"));
       const anyDone=stageSubs.length>0;
       let status="wait";
+      
       if(anyFail){status="fail";gFail++;totalFail++;}
       else if(anyDone){status="pass";gPass++;totalPass++;}
+      
       const bestSub=stageSubs.sort((a,b)=>new Date(b.timestamp_foreman||0)-new Date(a.timestamp_foreman||0))[0];
       stageResults.push({stage,status,sub:bestSub});
     });
 
-    // group header
     const grpEl=document.createElement("div");
     grpEl.className="group-row";
     const pct=stages.length>0?Math.round((gPass+gFail)/stages.length*100):0;
     const grpColor=gFail>0?"var(--red)":gPass+gFail===stages.length?"var(--pass)":"var(--warn)";
     grpEl.innerHTML=`
-      <div class="group-label">
+      <div class="group-label" style="margin-top:14px;">
         🏭 Group ${group}
-        <div class="group-prog"><div class="group-prog-fill" style="width:${pct}%;background:${grpColor}"></div></div>
+        <div class="group-prog" style="margin: 0 10px;"><div class="group-prog-fill" style="width:${pct}%;background:${grpColor}"></div></div>
         <span class="group-pct">${gPass+gFail}/${stages.length}</span>
       </div>`;
 
-    // stage list — fail ก่อน pass แล้ว wait
     const listEl=document.createElement("div");
     listEl.className="stage-list";
     const sorted=[
@@ -425,6 +427,7 @@ function openModal(typeKey,meta,subs,shifts){
       ...stageResults.filter(r=>r.status==="pass"),
       ...stageResults.filter(r=>r.status==="wait"),
     ];
+    
     sorted.forEach(r=>{
       const cls=r.status==="pass"?"si-pass":r.status==="fail"?"si-fail":"";
       const dotCls=r.status==="pass"?"dp":r.status==="fail"?"df":"dw";
@@ -441,7 +444,7 @@ function openModal(typeKey,meta,subs,shifts){
             <span>${c.name}</span>
             <span class="ck-val">${c.value?c.value+" · ":""}<span style="color:${c.result==="pass"?"var(--pass)":"var(--red)"}">${c.result==="pass"?"O":"✗"}</span></span>
           </div>`).join("")+
-          (r.sub?`<div class="si-meta">👷 ${r.sub.worker||""} · ✅ ${r.sub.foreman||"-"}</div>`:"")
+          (r.sub?`<div class="si-meta">Worker: ${r.sub.worker||""} · Appr by: ${r.sub.foreman||"-"}</div>`:"")
           +`</div>`;
       }
       si.innerHTML=`
@@ -457,8 +460,7 @@ function openModal(typeKey,meta,subs,shifts){
     bodyEl.appendChild(grpEl);
   });
 
-  document.getElementById("drawerSub").textContent=
-    `${totalPass}/${totalAll} ผ่าน · ${totalFail} พบปัญหา`;
+  document.getElementById("drawerSub").textContent=`${totalPass}/${totalAll} สถานีผ่านงาน · ${totalFail} สถานีมีปัญหา`;
   document.getElementById("overlay").classList.add("show");
   document.body.style.overflow="hidden";
 }
@@ -472,16 +474,16 @@ function tryClose(e){if(e.target===document.getElementById("overlay"))closeModal
 function exportCSV(){
   const dateVal=document.getElementById("filterDate").value;
   const subs=allSubs.filter(s=>String(s.date||"").split("T")[0]===dateVal&&s.status==="approved");
-  if(!subs.length){alert("ไม่มีข้อมูล");return;}
+  if(!subs.length){alert("ไม่มีข้อมูลสำหรับส่งออกในวันนี้");return;}
   let csv="\uFEFF";
   csv+="วันที่,กะ,Group,ประเภท,Stage,Worker,Foreman,ผ่าน,ไม่ผ่าน,รายการไม่ผ่าน,หมายเหตุ\n";
   subs.forEach(s=>{
     const c=s.checks||[];
-    const fn=c.filter(x=>x.result==="fail").map(x=>x.name).join("; ");
+    const fn=c.filter(x=>x.result==="fail").map(x=>x.name + (x.value?`(${x.value})`:"")).join("; ");
     csv+=`${s.date},${s.shift},${s.group},${s.type_label||s.type},${s.stage},${s.worker},${s.foreman||""},${c.filter(x=>x.result==="pass").length},${c.filter(x=>x.result==="fail").length},"${fn}","${(s.remark||"").replace(/"/g,"'")}"\n`;
   });
   const b=new Blob([csv],{type:"text/csv;charset=utf-8;"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`ISUZU_${dateVal}.csv`;a.click();
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`ISUZU_FRG_Report_${dateVal}.csv`;a.click();
 }
 
 syncFromSheets().then(()=>renderDashboard());
