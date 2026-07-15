@@ -39,9 +39,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .hold-stage{font-size:15px;font-weight:700;margin-bottom:4px;}
 .hold-meta{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .hold-fails{font-size:13px;color:var(--red);font-weight:600;margin-bottom:10px;}
-.hold-status{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px;display:inline-block;}
-.hold-status-wait{background:#FEF3C7;color:#92400E;}
-.hold-status-fixed{background:var(--pass-bg);color:var(--pass);}
 .section{margin:14px 14px 0;}
 .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;}
 .sub-card{background:var(--card);border-radius:14px;border:1.5px solid var(--border);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;}
@@ -82,8 +79,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .modal-title{font-size:17px;font-weight:800;margin-bottom:6px;}
 .modal-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
 .modal-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;}
-.modal-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;outline:none;margin-bottom:12px;}
-.modal-input:focus{border-color:var(--red);}
 .modal-select{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'Sarabun',sans-serif;font-size:14px;outline:none;background:var(--card);margin-bottom:16px;}
 .modal-row{display:flex;gap:8px;}
 .modal-btn{flex:1;padding:11px;border-radius:8px;border:none;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
@@ -109,14 +104,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
-<!-- Proxy Bar: แสดงเมื่อกำลังดูแทน Group อื่น -->
 <div class="proxy-bar" id="proxyBar">
   <span>⚠</span>
   <span id="proxyBarText">กำลังอนุมัติแทน Group — —</span>
   <button onclick="exitProxy()" style="margin-left:auto;background:rgba(0,0,0,.1);border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Sarabun',sans-serif;">ออกจากโหมดแทน</button>
 </div>
 
-<!-- Modal: เลือก Group ที่จะดูแทน -->
 <div class="modal-overlay" id="proxyModal">
   <div class="modal-box">
     <div class="modal-title">🔄 อนุมัติแทน Foreman</div>
@@ -161,7 +154,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div class="tab" id="tab-stations" onclick="switchTab('stations')">📊 Station ของฉัน</div>
       <div class="tab" id="tab-hold" onclick="switchTab('hold')">⏸ รอแก้ไข <span class="badge badge-warn" id="holdBadge" style="display:none">0</span></div>
-      <div class="tab" id="tab-proxy" onclick="openProxyModal()" style="color:var(--warn,#D97706);">🔄 แทน</div>
+      <div class="tab" id="tab-proxy" onclick="openProxyModal()" style="color:#D97706;">🔄 แทน</div>
     </div>
   </div>
 
@@ -192,12 +185,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <script>
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxFpwj3ZzsQK6CbbyiS-kyuiFPQd_3dNge_VE_7qgjxs5JsbaUN6eGjYkEXS7UfC6Mk/exec";
 
-// ============================================================
-// FOREMAN MASTER DATA
-// ============================================================
 const FOREMAN_DB = {
   "25019": { name:"นาย สุพัฒน์ คำชนะ",      shift:"A", group:"FRC" },
-  "05135": { name:"นาย สมพงศ์ พุ่มแก้ว",     shift:"A", group:"FRE" },
+  "05135": { name:"นาย สมพงศ์ พุ่มแก้ว",      shift:"A", group:"FRE" },
   "03085": { name:"นาย เสมียน ผลจันทร์",    shift:"A", group:"FRF" },
   "04072": { name:"นาย วิหาญ แรมจันทึก",    shift:"A", group:"FRL" },
   "04071": { name:"นาย ประกาศ นวนสว่าง",    shift:"A", group:"FRR" },
@@ -214,9 +204,6 @@ const FOREMAN_DB = {
   "94037": { name:"นาย วิบูลย์ อาจหาญ",     shift:"B", group:"FXC" },
 };
 
-// ============================================================
-// STATION DATA (เหมือนกับ worker_v2.html)
-// ============================================================
 const STATION_DATA = {
   FRC: {
     CO2: { label:"เครื่องเชื่อม CO2", stages:{
@@ -229,7 +216,7 @@ const STATION_DATA = {
     FANUC: { label:"หุ่นยนต์ FANUC", stages:{
       "CP1-03-LH": ["no.1", "no.3", "no.5"], "CP1-03-RH": ["no.2", "no.4", "no.6"],
     }},
-    CONTACT_TIP: { label:"CONTACT TIP", stages:{ "CP1-03": [] }},
+    CONTACT_TIP: { label:"CONTACT TIP", stages:{ "CP1-03": ["W1","W2","W3","W4","W5","W6"] }},
   },
   FRF: {
     HOIST: { label:"ELECTRIC HOIST", stages:{ "SA1-01": [] }},
@@ -263,9 +250,7 @@ const STATION_DATA = {
       "SC1-01": [], "SC1-02": [], "MC1-02": [],
       "MC1-04": ["No.2/4/6"], "MC1-05": ["No.1/3/5"], "MC1-07": [],
     }},
-    CONTACT_TIP: { label:"CONTACT TIP", stages:{
-      "SC1-01": [], "SC1-02": [], "MC1-02": [], "MC1-04": [], "MC1-05": [], "MC1-07": [],
-    }},
+    CONTACT_TIP: { label:"CONTACT TIP", stages:{ "SC1-01": ["W1","W2","W3"], "SC1-02": ["W1","W2","W3"], "MC1-02": ["W1","W2","W3","W4"], "MC1-04": ["W1","W2","W3","W4"], "MC1-05": ["W1","W2","W3","W4"], "MC1-07": ["W1","W2"] }},
   },
   FRU: {
     HOIST: { label:"ELECTRIC HOIST", stages:{ "SA2-01": [] }},
@@ -274,7 +259,8 @@ const STATION_DATA = {
       "SA2-01": [], "SA2-02": [], "MA2-01": [], "MA2-02": [], "MA2-04": [], "MA2-06": [], "MA2-09": [],
     }},
     AIR: { label:"AIR SERVICE UNIT", stages:{
-      "SA2-01&02": [], "MA2-01&02": [], "MA2-04": [], "MA2-06": [], "MA2-09": ["H8", "H9"],
+      "SA2-01&02": [], "MA2-01&02": [], "MA2-04": [], "MA2-06": [],
+      "MA2-09": ["H8", "H9"],
     }},
     FANUC: { label:"หุ่นยนต์ FANUC", stages:{ "SA2-01,02": [], "MA2-02": [], "MA2-04": [], "MA2-06": [] }},
     CONTACT_TIP: { label:"CONTACT TIP", stages:{ "MA2-02": ["W1","W2","W3","W4"], "MA2-04": ["W1","W2","W3","W4","W5","W6"], "MA2-06": ["W1","W2","W3","W4"], "SA2-01": ["W1","W2"], "SA2-02": ["W1","W2"] }},
@@ -304,15 +290,17 @@ const STATION_DATA = {
     JIG: { label:"JIG", stages:{ "CP2-02": [], "CP2-03": [], "CP2-04": [], "CP2-05": [] }},
     AIR: { label:"AIR SERVICE UNIT", stages:{ "CP2-02": [], "CP2-03": [], "CP2-04": [], "CP2-05": [] }},
     FANUC: { label:"หุ่นยนต์ FANUC", stages:{ "CP2-03": ["NO.1", "NO.3", "NO.5", "NO.2", "NO.4", "NO.6"] }},
-    CONTACT_TIP: { label:"CONTACT TIP", stages:{ "CP2-03": [] }},
+    CONTACT_TIP: { label:"CONTACT TIP", stages:{ "CP2-03": ["W1","W2","W3","W4","W5","W6"] }},
   },
 };
 
 const TYPE_ICONS = { HOIST:"⚙️", CO2:"🔥", JIG:"🔧", AIR:"💨", FANUC:"🤖", YASKAWA:"🤖", CONTACT_TIP:"🔌" };
 
 let currentFM = null;
+let proxyMode = false;
+let originalGroup = null;
+let originalShift = null;
 
-// คืนรายการ "ชื่อ Stage เต็ม" (รวม subtype) ทั้งหมดของ group ที่กำหนด พร้อมจัดกลุ่มตามประเภท
 function getAllStagesForGroup(group){
   const types = STATION_DATA[group] || {};
   const result = [];
@@ -340,10 +328,10 @@ function doLogin(){
   document.getElementById("mainScreen").style.display="block";
   document.getElementById("userPill").textContent = code+" ▾";
   document.getElementById("fmName").textContent = fm.name;
-  const stageCount = getAllStagesForGroup(fm.group).length;
-  document.getElementById("fmStations").textContent = "SHIFT "+fm.shift+" · Group "+fm.group+" · "+stageCount+" Station";
+  
+  exitProxy(); 
   renderApprove();
-  updateBadge();
+  updateHoldBadge();
 }
 
 function logout(){
@@ -356,8 +344,11 @@ function logout(){
 function switchTab(t){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  document.getElementById("page-"+t).classList.add("active");
-  document.getElementById("tab-"+t).classList.add("active");
+  const targetPage = document.getElementById("page-"+t);
+  if(targetPage) targetPage.classList.add("active");
+  const targetTab = document.getElementById("tab-"+t);
+  if(targetTab) targetTab.classList.add("active");
+  
   if(t==="stations") syncFromSheets().then(()=>renderStations());
   if(t==="approve") renderApprove();
   if(t==="hold") syncFromSheets().then(()=>renderHold());
@@ -371,11 +362,8 @@ function saveSubs(arr){
 }
 
 function parseRowsFromSheets(rows){
-  // หา JSON จากทุก column ที่เป็นไปได้ (รองรับกรณี column เลื่อน)
   const entries = rows.map(row=>{
-    // ลองหา JSON เต็มจาก key ที่รู้จักก่อน
     let jsonStr = row["JSON เต็ม"] || "";
-    // ถ้าว่าง ให้ลองหาจากทุก value ที่เหลือ (กรณี column header ผิด)
     if(!jsonStr){
       for(const key of Object.keys(row)){
         const v = String(row[key]||"");
@@ -398,14 +386,12 @@ async function syncFromSheets(){
     if(data.result==="success" && data.rows && data.rows.length>0){
       const fromSheets = parseRowsFromSheets(data.rows);
       if(fromSheets.length>0){
-        // Merge: ถ้า local มี approved แต่ Sheets ยังเป็น pending → ใช้ local
         const local = getSubs();
         const merged = fromSheets.map(se=>{
           const le = local.find(l=>l.id===se.id);
           if(le && le.status==="approved" && se.status==="pending") return le;
           return se;
         });
-        // เพิ่ม local entry ที่ยังไม่ถึง Sheets
         local.forEach(l=>{ if(!merged.find(m=>m.id===l.id)) merged.push(l); });
         localStorage.setItem("isuzu_submissions",JSON.stringify(merged));
         return true;
@@ -416,7 +402,6 @@ async function syncFromSheets(){
 }
 
 function getToday(){
-  // ใช้ timezone ไทย (UTC+7) ป้องกันวันที่เพี้ยนหลังเที่ยงคืน UTC
   const now = new Date();
   const thai = new Date(now.getTime() + 7*60*60*1000);
   return thai.toISOString().split("T")[0];
@@ -426,7 +411,6 @@ function getMyPending(){
   const all = getSubs();
   const today = getToday();
 
-  // หา stage+type ที่ approved แล้วในวันนี้ (ไม่แสดง pending ซ้ำอีก)
   const approvedKeys = new Set(
     all.filter(s=>
       s.status==="approved" &&
@@ -442,23 +426,24 @@ function getMyPending(){
     s.shift===currentFM.shift &&
     String(s.date||"").split("T")[0]===today &&
     !isHeld(s.id) &&
-    !approvedKeys.has(s.type+"|"+s.stage)  // ไม่แสดง pending ถ้า stage+type นั้น approved แล้ว
+    !approvedKeys.has(s.type+"|"+s.stage)
   );
 }
 
-// เช็คว่า id นี้ถูก hold ไว้ใน localStorage หรือเปล่า
 function isHeld(id){
   const today = getToday();
   const key = "isuzu_held_" + today;
   const held = JSON.parse(localStorage.getItem(key)||"[]");
   return held.includes(id);
 }
+
 function getMyDone(){
   const all = getSubs();
   const today = getToday();
   return all.filter(s =>
     s.status==="approved" &&
-    s.foreman_code===currentFM.code &&
+    s.group===currentFM.group &&
+    s.shift===currentFM.shift &&
     String(s.date||"").split("T")[0]===today
   );
 }
@@ -468,10 +453,7 @@ function updateApproveCount(){
   const done = getMyDone().length;
   const stages = getAllStagesForGroup(currentFM.group).length;
   const el = document.getElementById("fmStations");
-  const shift = currentFM.shift;
-  const group = currentFM.group;
-  const stageCount = stages;
-  el.textContent = "SHIFT "+shift+" · Group "+group+" · อนุมัติแล้ว "+done+"/"+stageCount;
+  el.textContent = `SHIFT ${currentFM.shift} · Group ${currentFM.group}${proxyMode?" (แทน)":""} · อนุมัติแล้ว ${done}/${stages}`;
 }
 
 function updateBadge(){
@@ -481,14 +463,17 @@ function updateBadge(){
   updateApproveCount();
 }
 
-// ===== RENDER APPROVE =====
 function renderApprove(){
   if(!currentFM) return;
+  _renderApprove();
+  updateBadge();
   syncFromSheets().then(()=>{
     _renderApprove();
     updateBadge();
+    updateHoldBadge();
   });
 }
+
 function _renderApprove(){
   if(!currentFM) return;
   const list = document.getElementById("approveList");
@@ -517,13 +502,18 @@ function _renderApprove(){
 
 function buildApproveCard(s, isDone){
   const fails = (s.checks||[]).filter(c=>c.result==="fail");
-  const passC = (s.checks||[]).filter(c=>c.result==="pass").length;
   const card = document.createElement("div");
   card.className="sub-card";
-  const t = new Date(s.timestamp_worker).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+  
+  let t = "—";
+  if(s.timestamp_worker){
+    try { t = new Date(s.timestamp_worker).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}); } catch(e){}
+  }
+  
   const chip = isDone
     ? `<span class="chip ${fails.length?"chip-fail":"chip-pass"}">${fails.length?"⚠ พบปัญหา":"✓ ผ่าน"}</span>`
     : `<span class="chip chip-pending">รออนุมัติ</span>`;
+    
   card.innerHTML=`
     <div class="sub-header">
       <div>
@@ -533,12 +523,11 @@ function buildApproveCard(s, isDone){
     </div>
     ${(s.checks||[]).map(c=>`
       <div class="check-row">
-        <div class="check-row-name">${c.name}${c.comment?`<br><span style="font-size:11px;color:var(--muted);">↳ ${c.comment}</span>`:""}</div>
+        <div class="check-row-name">${c.name}${c.value?` <b style="color:var(--red);">(${c.value})</b>`:""}${c.comment?`<br><span style="font-size:11px;color:var(--muted);">↳ ${c.comment}</span>`:""}</div>
         <span class="rtag ${c.result==="pass"?"rtag-pass":"rtag-fail"}">${c.result==="pass"?"O":"✗"}</span>
       </div>`).join("")}
-    ${s.remark?`<div style="margin-top:8px;font-size:12px;color:var(--muted);">📝 ${s.remark}</div>`:""}
+    ${s.remark?`<div style="margin-top:8px;font-size:12px;color:var(--muted);background:#F3F4F6;padding:6px;border-radius:6px;">📝 หมายเหตุ: ${s.remark}</div>`:""}
     ${!isDone?`
-      ${proxyMode?`<div style="font-size:11px;color:#92400E;background:#FEF3C7;border-radius:6px;padding:5px 10px;margin-bottom:6px;">⚠ กำลังอนุมัติแทน Group ${currentFM.group}</div>`:""}
       <div class="approve-row">
         <input type="text" id="fn_${s.id}" value="${currentFM.name}${proxyMode?" [แทน]":""}" placeholder="ชื่อ Foreman">
         ${fails.length>0?`
@@ -548,7 +537,7 @@ function buildApproveCard(s, isDone){
           <button class="approve-btn" id="ab_${s.id}" onclick="approve('${s.id}')">✓ อนุมัติ</button>
         `}
       </div>
-    `:`<div class="approved-banner">✓ อนุมัติโดย ${s.foreman}${s.proxy_by?" (แทนโดย "+s.proxy_by+")":""} · ${new Date(s.timestamp_foreman).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"})}</div>`}
+    `:`<div class="approved-banner">✓ อนุมัติโดย ${s.foreman}${s.proxy_by?" (แทนโดย "+s.proxy_by+")":""}</div>`}
   `;
   return card;
 }
@@ -563,52 +552,49 @@ function approve(id){
   const all = getSubs();
   const idx = all.findIndex(s=>s.id===id);
   if(idx===-1) return;
+  
   all[idx].foreman = name;
   all[idx].foreman_code = currentFM.code;
   all[idx].timestamp_foreman = new Date().toISOString();
   all[idx].status = "approved";
-  // บันทึกว่าเป็นการอนุมัติแทน
+  
+  // บันทึกข้อมูบให้สะท้อนกลุ่มต้นทางคนกดแทนอย่างถูกต้อง
   if(proxyMode){
-    all[idx].proxy_by = currentFM.name;
-    all[idx].proxy_code = currentFM.code;
-    all[idx].proxy_for_group = currentFM.group;
+    all[idx].proxy_by = FOREMAN_DB[currentFM.code].name; 
+    all[idx].proxy_code = currentFM.code;               
+    all[idx].proxy_for_group = originalGroup;           
   }
   saveSubs(all);
 
-  // ถ้ารายการที่อนุมัตินี้ผ่านทุกข้อ → ลบ "held" ที่เกี่ยวข้องกับ stage เดียวกันออกจาก isuzu_held
-  // เพราะ Worker ส่งมาใหม่แล้วและผ่านแล้ว ไม่ต้องรอแก้ไขอีก
   const approvedEntry = all[idx];
   const hasFail = (approvedEntry.checks||[]).some(c=>c.result==="fail");
   if(!hasFail){
-    // ลบ id ที่ hold ไว้ทุกตัวที่เป็น stage+group+shift เดียวกัน
     const todayKey = "isuzu_held_" + getToday();
     const held = JSON.parse(localStorage.getItem(todayKey)||"[]");
-    const allSubs = getSubs();
     const newHeld = held.filter(hid=>{
-      const hEntry = allSubs.find(s=>s.id===hid);
+      const hEntry = all.find(s=>s.id===hid);
       if(!hEntry) return false;
-      const sameStage = hEntry.stage===approvedEntry.stage &&
-                        hEntry.group===approvedEntry.group &&
-                        hEntry.shift===approvedEntry.shift;
-      return !sameStage;
+      return !(hEntry.stage===approvedEntry.stage && hEntry.group===approvedEntry.group && hEntry.shift===approvedEntry.shift);
     });
     localStorage.setItem(todayKey, JSON.stringify(newHeld));
   }
 
-  try{
-    const encoded = encodeURIComponent(JSON.stringify(all[idx]));
-    const img = new Image();
-    img.src = SHEETS_URL + "?payload=" + encoded;
-  }catch(e){ console.log("Foreman send error:",e); }
-
-  updateBadge();
-  updateApproveCount();
-  updateHoldBadge();
-  _renderApprove();
-  showToast("✓ อนุมัติและส่ง Office สำเร็จ!","ok");
+  fetch(SHEETS_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(all[idx])
+  }).then(() => {
+    showToast("✓ อนุมัติและส่งข้อมูลเรียบร้อย!","ok");
+    renderApprove();
+    updateHoldBadge();
+  }).catch(e => {
+    console.error("Foreman post error:", e);
+    showToast("บันทึกออฟไลน์แล้ว ข้อมูลจะซิงค์ใหม่อีกครั้ง","err");
+    renderApprove();
+  });
 }
 
-// ===== RENDER STATIONS =====
 function renderStations(){
   if(!currentFM) return;
   const grid = document.getElementById("stationGrid");
@@ -622,11 +608,10 @@ function renderStations(){
     return;
   }
 
-  // จัดกลุ่มตามประเภท
   const byType = {};
   stages.forEach(s=>{
     if(!byType[s.type]) byType[s.type] = { label:s.typeLabel, stages:[] };
-    byType[s.type].stages.push(s.stage);
+    if(!byType[s.type].stages.includes(s.stage)) byType[s.type].stages.push(s.stage);
   });
 
   Object.entries(byType).forEach(([typeKey, typeInfo])=>{
@@ -645,6 +630,7 @@ function renderStations(){
       const approved = todaySubs.filter(s=>s.status==="approved");
       const hasFail = approved.some(s=>(s.checks||[]).some(c=>c.result==="fail"));
       const isDone = approved.length>0;
+      
       const row = document.createElement("div");
       row.className="station-row";
       const dotClass = !isDone?"dot-pending":hasFail?"dot-issue":"dot-done";
@@ -660,27 +646,13 @@ function renderStations(){
   });
 }
 
-function showToast(msg,type=""){
-  const t=document.getElementById("toast");
-  t.textContent=msg;t.className="toast show "+type;
-  setTimeout(()=>t.className="toast",3000);
-}
-
-
-// ============================================================
-// PROXY APPROVAL — อนุมัติแทน
-// ============================================================
-let proxyMode = false;        // กำลังดูแทน Group อื่นอยู่ไหม
-let originalGroup = null;     // Group ของตัวเอง
-let originalShift = null;     // Shift ของตัวเอง
-
 function openProxyModal(){
-  // pre-select ค่า shift ของตัวเอง
+  if(!currentFM) return;
   document.getElementById("proxyShiftSelect").value = currentFM.shift;
-  // ลบ group ตัวเองออกจาก dropdown
   const sel = document.getElementById("proxyGroupSelect");
+  const myRealGroup = proxyMode ? originalGroup : currentFM.group;
   Array.from(sel.options).forEach(opt=>{
-    opt.disabled = opt.value === currentFM.group;
+    opt.disabled = opt.value === myRealGroup;
   });
   document.getElementById("proxyModal").classList.add("show");
 }
@@ -694,32 +666,25 @@ function confirmProxy(){
   const shift = document.getElementById("proxyShiftSelect").value;
   if(!group){ showToast("กรุณาเลือก Group","err"); return; }
 
-  // บันทึก group/shift เดิมก่อนเปลี่ยน
   if(!proxyMode){
-    originalGroup = currentFM.group;
+    originalGroup = currentFM.group; 
     originalShift = currentFM.shift;
   }
 
   proxyMode = true;
-  currentFM.group = group;
+  currentFM.group = group; 
   currentFM.shift = shift;
 
-  // อัปเดต UI
   const proxyBar = document.getElementById("proxyBar");
-  proxyBar.classList.add("show");
-  document.getElementById("proxyBarText").textContent =
-    `กำลังอนุมัติแทน Group ${group} SHIFT ${shift} (ในฐานะ ${currentFM.name})`;
+  if(proxyBar) proxyBar.classList.add("show");
+  document.getElementById("proxyBarText").textContent = `⚠ Foreman จาก Group ${originalGroup} กำลังอนุมัติแทน Group ${group} SHIFT ${shift}`;
 
-  // อัปเดต header
-  document.getElementById("fmName").textContent = currentFM.name + " [แทน " + group + "]";
-  const stageCount = getAllStagesForGroup(group).length;
-  document.getElementById("fmStations").textContent =
-    "SHIFT "+shift+" · Group "+group+" (แทน) · อนุมัติแล้ว 0/"+stageCount;
-
+  document.getElementById("fmName").textContent = FOREMAN_DB[currentFM.code].name + " [ทำแทน Group " + group + "]";
+  
   closeProxyModal();
   renderApprove();
-  updateBadge();
-  showToast("กำลังดูแทน Group "+group+" SHIFT "+shift,"ok");
+  updateHoldBadge();
+  showToast("เข้าสู่โหมดทำงานแทน Group "+group,"ok");
 }
 
 function exitProxy(){
@@ -728,21 +693,16 @@ function exitProxy(){
   currentFM.group = originalGroup;
   currentFM.shift = originalShift;
 
-  // คืน UI กลับ
-  document.getElementById("proxyBar").classList.remove("show");
+  const proxyBar = document.getElementById("proxyBar");
+  if(proxyBar) proxyBar.remove("show");
   document.getElementById("fmName").textContent = currentFM.name;
-  updateApproveCount();
+  
   renderApprove();
-  updateBadge();
+  updateHoldBadge();
   showToast("กลับสู่ Group ของตัวเองแล้ว","ok");
 }
 
-
-// ============================================================
-// HOLD FOR FIX — รอแก้ไข
-// ============================================================
 function holdForFix(id){
-  // บันทึก id ที่ hold ไว้ — ใช้ key รายวันเพื่อ auto-expire
   const today = getToday();
   const key = "isuzu_held_" + today;
   const held = JSON.parse(localStorage.getItem(key)||"[]");
@@ -750,11 +710,9 @@ function holdForFix(id){
     held.push(id);
     localStorage.setItem(key, JSON.stringify(held));
   }
-
-  updateBadge();
+  renderApprove();
   updateHoldBadge();
-  _renderApprove();
-  showToast("⏸ ย้ายไปรอแก้ไขแล้ว","ok");
+  showToast("⏸ ย้ายไปหน้ารอแก้ไขแล้ว","ok");
 }
 
 function getMyHold(){
@@ -771,6 +729,7 @@ function getMyHold(){
 }
 
 function updateHoldBadge(){
+  if(!currentFM) return;
   const n = getMyHold().length;
   const b = document.getElementById("holdBadge");
   if(b){ b.style.display=n?"inline":"none"; b.textContent=n; }
@@ -791,13 +750,8 @@ function renderHold(){
 
   hold.forEach(s=>{
     const fails = (s.checks||[]).filter(c=>c.result==="fail");
-    const failNames = fails.map(c=>{
-      let txt = c.name;
-      if(c.value) txt += " ["+c.value+"]";
-      return txt;
-    }).join(", ");
+    const failNames = fails.map(c=> c.name + (c.value? ` (${c.value})` : "")).join(", ");
 
-    // ตรวจว่า Worker ส่งรายการใหม่มาแล้วและอนุมัติผ่านแล้วหรือยัง
     const approvedNew = all.find(x=>
       x.status==="approved" &&
       x.stage===s.stage && x.group===s.group &&
@@ -807,7 +761,6 @@ function renderHold(){
       !(x.checks||[]).some(c=>c.result==="fail")
     );
 
-    // ตรวจว่า Worker ส่งมาใหม่แล้วแต่ยังรออนุมัติ
     const pendingNew = all.find(x=>
       x.status==="pending" &&
       x.stage===s.stage && x.group===s.group &&
@@ -821,36 +774,43 @@ function renderHold(){
 
     let statusBlock = "";
     if(approvedNew){
-      // อนุมัติผ่านแล้ว — แสดงแต่ซีดลง (จะถูกลบจาก held อัตโนมัติ)
-      statusBlock = `
-        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--pass);">
-          ✅ อนุมัติผ่านแล้ว — แก้ไขเรียบร้อย
-        </div>`;
+      statusBlock = `<div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--pass);">✅ อนุมัติรอบใหม่ผ่านเรียบร้อยแล้ว</div>`;
       card.style.opacity="0.5";
     } else if(pendingNew){
       statusBlock = `
-        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--pass);">
-          ✅ Worker ส่งแก้ไขมาแล้ว — รอการอนุมัติ
-        </div>
-        <button class="approve-btn" style="width:100%;" onclick="switchTab('approve')">ไปหน้าอนุมัติ →</button>`;
+        <div style="background:var(--pass-bg);border:1.5px solid var(--pass-border);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--pass);">✅ Worker ส่งใบตรวจใหม่เข้ามาแล้ว</div>
+        <button class="approve-btn" style="width:100%;" onclick="switchTab('approve')">ไปหน้าตรวจสอบข้อมูล →</button>`;
     } else {
-      statusBlock = `
-        <div style="background:#FEF3C7;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400E;">
-          ⏳ รอ Worker แก้ไขและส่งใหม่อีกครั้ง
-        </div>`;
+      statusBlock = `<div style="background:#FEF3C7;border-radius:8px;padding:8px 12px;font-size:13px;color:#92400E;">⏳ รอ Worker ดำเนินการแก้ไขข้อที่ไม่ผ่านและส่งใหม่</div>`;
     }
 
     card.innerHTML=`
       <div class="hold-stage">${s.type_label||s.type||""} — ${s.stage}</div>
       <div class="hold-meta">Worker: ${s.worker} · SHIFT ${s.shift}</div>
-      <div class="hold-fails" style="margin-bottom:8px;">❌ ไม่ผ่าน: ${failNames}</div>
+      <div class="hold-fails" style="margin-bottom:8px;">❌ ไม่ผ่านในข้อ: ${failNames}</div>
       ${statusBlock}
     `;
     list.appendChild(card);
   });
 }
 
-setInterval(()=>{if(currentFM){updateBadge();updateApproveCount();updateHoldBadge();}},30000);
+function showToast(msg,type=""){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.className="toast show "+type;
+  setTimeout(()=>t.className="toast",3000);
+}
+
+setInterval(()=>{
+  if(currentFM){
+    syncFromSheets().then(()=>{
+      const activePage = document.querySelector(".page.active");
+      if(activePage.id === "page-approve") _renderApprove();
+      if(activePage.id === "page-hold") renderHold();
+      updateBadge();
+      updateHoldBadge();
+    });
+  }
+}, 30000);
 </script>
 </body>
 </html>
