@@ -44,7 +44,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .sub-card{background:var(--card);border-radius:14px;border:1.5px solid var(--border);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;}
 .sub-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
 .sub-title{font-size:15px;font-weight:700;}
-.sub-meta">font-size:12px;color:var(--muted);margin-top:2px;}
+.sub-meta{font-size:12px;color:var(--muted);margin-top:2px;}
 .chip{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;flex-shrink:0;}
 .chip-pending{background:#FEF3C7;color:#92400E;}
 .chip-pass{background:var(--pass-bg);color:var(--pass);}
@@ -97,7 +97,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <div class="login-logo">ISUZU</div>
     <div class="login-sub">Foreman</div>
     <div class="login-label">รหัสพนักงาน Foreman (ตัวเลขเท่านั้น)</div>
-    <!-- ปรับปรุงจุดกรอกรหัส: บังคับคีย์บอร์ดตัวเลข และกรองไม่ให้พิมพ์ตัวอักษรอื่นได้ -->
     <input class="login-input" id="codeInput" type="text" maxlength="5" placeholder="xxxxx" inputmode="numeric" pattern="[0-9]*"
       oninput="this.value = this.value.replace(/[^0-9]/g, '');"
       onkeydown="if(event.key==='Enter')doLogin()">
@@ -274,7 +273,7 @@ const STATION_DATA = {
       "SC2-01": ["RG2u-RJ2u"], "SC2-02": ["RG2u-RJ2u"],
       "MC2-01": [], "MC2-02": [], "MC2-04": [], "MC2-05": [], "MC2-07": [], "MC2-10": [],
     }},
-    AIR: { label:"AIR SERVICE UNIT", stages:{
+    AIR: { border: "none", label:"AIR SERVICE UNIT", stages:{
       "SC2-01": [], "SC2-02": [], "MC2-01,02": [], "MC2-04,05": [], "MC2-07": [],
       "MC2-10": ["H8", "H9", "H10", "Jig"],
     }},
@@ -409,26 +408,34 @@ function getToday(){
   return thai.toISOString().split("T")[0];
 }
 
+// ----------------------------------------------------
+// แก้ไขระบบปลดล็อกคัดกรองข้อมูล: อิงตามเวลาใบงานล่าสุด เพื่อให้กดส่งมาซ้ำได้
+// ----------------------------------------------------
 function getMyPending(){
   const all = getSubs();
   const today = getToday();
 
-  const approvedKeys = new Set(
-    all.filter(s=>
-      s.status==="approved" &&
-      s.group===currentFM.group &&
-      s.shift===currentFM.shift &&
-      String(s.date||"").split("T")[0]===today
-    ).map(s=>s.type+"|"+s.stage)
-  );
-
-  return all.filter(s =>
-    s.status==="pending" &&
+  // 1. คัดกรองเอาเฉพาะรายการของกลุ่มและกะตัวเองในวันนี้
+  const myTodaySubs = all.filter(s =>
     s.group===currentFM.group &&
     s.shift===currentFM.shift &&
-    String(s.date||"").split("T")[0]===today &&
+    String(s.date||"").split("T")[0]===today
+  );
+
+  // 2. หาว่าใบงานล่าสุดของแต่ละด่าน (Stage + Type) มีสถานะเป็นอะไร
+  const latestStatusMap = {};
+  myTodaySubs.forEach(s => {
+    const key = s.type + "|" + s.stage;
+    if (!latestStatusMap[key] || new Date(s.timestamp_worker) > new Date(latestStatusMap[key].time)) {
+      latestStatusMap[key] = { id: s.id, status: s.status, time: s.timestamp_worker };
+    }
+  });
+
+  // 3. ปล่อยเฉพาะใบงานที่มีสถานะล่าสุดเป็น pending และไม่โดนขังในแท็บรอแก้ไขขึ้นมา
+  return myTodaySubs.filter(s =>
+    s.status==="pending" &&
     !isHeld(s.id) &&
-    !approvedKeys.has(s.type+"|"+s.stage)
+    latestStatusMap[typeKey = s.type + "|" + s.stage]?.id === s.id
   );
 }
 
