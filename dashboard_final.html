@@ -252,7 +252,9 @@ function parseRows(rows){
     try{
       const e=JSON.parse(j);
       if(!e||!e.id) return null;
-      if(e.proxy_by && e.status==="pending") e.status="approved";
+      
+      // ดักจับสถานะอนุมัติแทนให้แม่นยำยิ่งขึ้น
+      if(e.proxy_by || row["อนุมัติแทนโดย"]) e.status="approved";
       if(!e.foreman && row["Foreman"]) e.foreman = String(row["Foreman"]);
       if(!e.status && row["สถานะ"]) e.status = String(row["สถานะ"]);
       return e;
@@ -281,7 +283,11 @@ function setShift(s,btn){
   renderDashboard();
 }
 
-function refresh(){syncFromSheets().then(()=>renderDashboard());resetCountdown();}
+function refresh(){
+  syncFromSheets().then(()=>renderDashboard());
+  resetCountdown();
+}
+
 function resetCountdown(){
   countdown=30;clearInterval(countdownTimer);
   countdownTimer=setInterval(()=>{
@@ -299,7 +305,10 @@ function renderDashboard(){
   const subs=allSubs.filter(s=>{
     const d=String(s.date||"").split("T")[0];
     const shiftOk=currentShift==="ALL"||s.shift===currentShift;
-    return d===dateVal&&s.status==="approved"&&shiftOk;
+    
+    // ดักจับทั้งคู่กรณีส่งสเตตัสภาษาอังกฤษหรือภาษาไทยหลุดมาตอนอนุมัติแทน
+    const isApproved = s.status==="approved" || s.status==="Approved" || s.status==="สถานะ";
+    return d===dateVal&&isApproved&&shiftOk;
   });
 
   const typeStats={};
